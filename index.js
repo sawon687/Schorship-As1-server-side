@@ -159,10 +159,12 @@ app.post('/create-checkout-session', async (req, res) => {
       cancel_url: `${process.env.SITE_DOMAIN}/payment-failed`,
       metadata: {
         scholarshipId: application._id,
+       scholarshipName: application.scholarshipName,
         userName: application.displayName, // ✅ FIXED
         userEmail: application.email,
         universityName: application.universityName,
         scholarshipCategory: application.scholarshipCategory,
+        subjectCategory:application.subjectCategory,
         degree: application.degree,
         applicationFees: application.applicationFees,
         serviceCharge: application.serviceCharge,
@@ -176,6 +178,7 @@ app.post('/create-checkout-session', async (req, res) => {
       userEmail: session.customer_email, // ✅ FIXED
       universityName: session.metadata.universityName,
       scholarshipCategory: session.metadata.scholarshipCategory,
+      subjectCategory:session.metadata.subjectCategory,
       degree: session.metadata.degree,
       applicationFees: session.metadata.applicationFees,
       serviceCharge: session.metadata.serviceCharge,
@@ -198,7 +201,7 @@ app.post('/create-checkout-session', async (req, res) => {
 
 // payment check
 
-app.patch('/payment-seccess',async(req,res)=>{
+app.patch('/payment-success',async(req,res)=>{
   const sessionId=req.query.session_id
   const session= await stripe.checkout.sessions.retrieve(sessionId);
   console.log('sesstion id',session)
@@ -219,8 +222,17 @@ app.patch('/payment-seccess',async(req,res)=>{
       }
          
       const result=await applicationsColl.updateOne(query,update)
+         const ScholarshipDetails = {
+      scholarshipId: session.metadata.scholarshipId,
+      scholarshipName:session.metadata.scholarshipName,
+      universityName: session.metadata.universityName,
+      degree: session.metadata.degree,
+      subject:session.metadata.subjectCategory,
+      amount:session.amount_total/100,
+      amoutnPaid:session.payment_status,
 
-      return res.send(result)
+    };
+      return res.send({success:true,result,ScholarshipDetails})
 
     }
   
