@@ -134,22 +134,22 @@ async function run() {
       res.send(result)
     })
 //  payment api
-  app.post('/create-checkout-session', async (req, res) => {
+app.post('/create-checkout-session', async (req, res) => {
   try {
-    const applicationInfo = req.body;
-  
+    const application = req.body;
+
     const session = await stripe.checkout.sessions.create({
-      customer_email: applicationInfo.userEmail,
+      customer_email: application.email, // ✅ only email supported
       payment_method_types: ['card'],
       line_items: [
         {
           price_data: {
             currency: 'USD',
             product_data: {
-              name: applicationInfo.scholarshipName,
-              images: [applicationInfo.scholarImage],
+              name: application.scholarshipName,
+              images: [application.universityImage],
             },
-            unit_amount: applicationInfo.totalAmount * 100,
+            unit_amount: application.totalAmount * 100,
           },
           quantity: 1,
         },
@@ -158,26 +158,74 @@ async function run() {
       success_url: `${process.env.SITE_DOMAIN}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.SITE_DOMAIN}/payment-failed`,
       metadata: {
-        scholarshipId: applicationInfo.scholarshipId,
-        scholarshipName: applicationInfo.scholarshipName,
-        userEmail: applicationInfo.userEmail,
-        applicationFee: applicationInfo.applicationFee,
-        serviceCharge: applicationInfo.serviceCharge,
-        totalAmount: applicationInfo.totalAmount,
+        scholarshipId: application._id,
+        userName: application.displayName, // ✅ FIXED
+        userEmail: application.email,
+        universityName: application.universityName,
+        scholarshipCategory: application.scholarshipCategory,
+        degree: application.degree,
+        applicationFees: application.applicationFees,
+        serviceCharge: application.serviceCharge,
+        applicationStatus: 'pending',
       },
     });
 
-    console.log('Stripe session created:', session.id);
-    res.json({ url: session.url });
+    const applicationInfo = {
+      scholarshipId: session.metadata.scholarshipId,
+      userName: session.metadata.userName,
+      userEmail: session.customer_email, // ✅ FIXED
+      universityName: session.metadata.universityName,
+      scholarshipCategory: session.metadata.scholarshipCategory,
+      degree: session.metadata.degree,
+      applicationFees: session.metadata.applicationFees,
+      serviceCharge: session.metadata.serviceCharge,
+      applicationStatus: session.metadata.applicationStatus,
+      paymentStatus: 'unpaid',
+      applicationDate: new Date(),
+    };
+
+    const result = await applicationsColl.insertOne(applicationInfo);
+
+    res.send({ url: session.url, applicationId: result.insertedId });
+
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: error.message });
   }
 });
 
+
+
 // payment check
 
+app.patch('/payment-seccess',async(req,res)=>{
+  const sessionId=req.query.session_id
+  const session= await stripe.checkout.sessions.retrieve(sessionId);
+  console.log('sesstion id',session)
+  console.log(sessionId)
+  
 
+    if(session.payment_status=='paid')
+    {  
+
+      const  id=session.metadata.scholarshipId
+      const  query={ scholarshipId:id}
+         const update={
+       $set:{
+         paymentStatus:'paid'
+       }
+
+       
+      }
+         
+      const result=await applicationsColl.updateOne(query,update)
+
+      return res.send(result)
+
+    }
+  
+    res.send({ message: 'Payment not completed' });
+})
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
