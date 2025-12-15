@@ -250,16 +250,30 @@ app.get('/payment-failed', async (req, res) => {
   });
 }); 
 
+
+
 // application get display
 
 app.get('/application',async(req,res)=>{
-   const  email=req.query.email;
+   const  userEmail=req.query.email;
    const   query={}
-   if(email)
+   if(userEmail)
    {
-     query.email=email
+     query.userEmail=userEmail
    }
    const result=await applicationsColl.find(query).toArray()
+
+   res.send(result)
+})
+
+
+// application deleted id
+
+app.delete('/application/:id',async(req,res)=>{
+   const  id=req.params.id;
+   const   query={_id: new ObjectId(id)}
+
+   const result=await applicationsColl.deleteOne(query)
 
    res.send(result)
 })
