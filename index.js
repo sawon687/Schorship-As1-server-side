@@ -156,7 +156,7 @@ app.post('/create-checkout-session', async (req, res) => {
       ],
       mode: 'payment',
       success_url: `${process.env.SITE_DOMAIN}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.SITE_DOMAIN}/payment-failed`,
+      cancel_url: `${process.env.SITE_DOMAIN}/payment-failed?session_id={CHECKOUT_SESSION_ID}`,
       metadata: {
         scholarshipId: application._id,
        scholarshipName: application.scholarshipName,
@@ -248,7 +248,21 @@ app.get('/payment-failed', async (req, res) => {
     scholarshipName: session.metadata.scholarshipName,
     errorMessage: session.last_payment_error?.message || 'Payment cancelled',
   });
-});
+}); 
+
+// application get display
+
+app.get('/application',async(req,res)=>{
+   const  email=req.query.email;
+   const   query={}
+   if(email)
+   {
+     query.email=email
+   }
+   const result=await applicationsColl.find(query).toArray()
+
+   res.send(result)
+})
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
