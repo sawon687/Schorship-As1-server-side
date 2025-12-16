@@ -245,13 +245,49 @@ app.post('/create-checkout-session', async (req, res) => {
 // application review
 app.post('/reviews',async(req,res)=>{
        const review=req.body
-
-       const result=await reviewscoll.insertOne(review);
+        const reviewInfo={
+          ...review,
+          date:new Date()
+        }
+       const result=await reviewscoll.insertOne(reviewInfo);
 
        res.send(result)
 })
+// review get display fronted
+app.get('/reviews',async(req,res)=>{
+   const  email=req.params.email
+   const query={}
+   if(email)
+   {
+      query.userEmail=email
+   }
+   const  result=await reviewscoll.find(query).sort({date:'-1'}).toArray()
 
+   res.send(result)
+})
+// revies update 
+app.patch('/reviews/:id',async(req,res)=>{
+        const id=req.params.id;
+        const reviewInfo=req.body
+        console.log('review info',reviewInfo)
+        const query={_id: new ObjectId(id)};
+        const update={
+             $set:{
+              rating:reviewInfo.rating,
+              reviewComment:reviewInfo.userComment,
+             }
+        }
+        const result=await reviewscoll.updateOne(query,update)
 
+        res.send(result)
+})
+// reviews delete
+app.delete('/reviews/:id',async(req,res)=>{
+    const id=req.params.id;
+    const query={_id:new ObjectId(id)};
+    const result=await reviewscoll.deleteOne(query)
+    res.send(result)
+})
 
 // payment check
 
