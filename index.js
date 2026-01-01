@@ -304,7 +304,7 @@ async function run() {
       }
     });
 
-    app.get('/reviews', verifyFBToken, async (req, res) => {
+    app.get('/reviews',  async (req, res) => {
       try {
         const { email, id } = req.query;
         const query = {};
