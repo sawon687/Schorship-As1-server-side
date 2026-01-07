@@ -303,7 +303,7 @@ async function run() {
         res.status(500).send({ message: 'Insert failed', error: err.message });
       }
     });
-// api display
+// api
     app.get('/reviews',  async (req, res) => {
       try {
         const { email, id } = req.query;
